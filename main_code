@@ -1,0 +1,486 @@
+from graphics import Canvas
+import random
+    
+CANVAS_WIDTH = 640
+CANVAS_HEIGHT = 640
+square_size = CANVAS_HEIGHT/8
+canvas = Canvas(CANVAS_WIDTH, CANVAS_HEIGHT)
+
+def main():
+
+    fill_squares(canvas)
+
+    white_pieces = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", 
+    "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn"]
+    white_squares = []
+    for k in range(1, 3):
+        for l in range (1, 9):
+            white_squares.append([l, k])
+
+    black_pieces = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", 
+    "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn"]
+    black_squares = []
+    for k in range(7, 9):
+        for l in range (1, 9):
+            black_squares.append([l, 15 - k])
+
+    hole = []
+
+    create_position(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+
+    choice = make_choice(canvas)
+
+    create_position(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+
+    if choice == "normal":    
+        play_normal_game(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+    
+    if choice == "hard":
+        play_hard_game(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+
+
+def make_choice(canvas):
+    canvas.create_rectangle(50, 210, 610, 450)
+    canvas.create_rectangle(40, 200, 600, 440, "white", "black")
+    canvas.create_text(80, 240, text = "CHOOSE AN OPTION", 
+    font = "Courier New", font_size = 50)
+    canvas.create_rectangle(133, 340, 273, 380)
+    normal = canvas.create_rectangle(130, 340, 270, 380, "white", "black")
+    canvas.create_text(160, 350, text = "Normal", font_size = 25)
+    hard = canvas.create_rectangle(370, 340, 510, 380, "red")
+    canvas.create_text(412, 348, text = "HARD",font = "Impact", font_size = 25)
+    canvas.create_image(370, 302, "fire.png")
+    count = 0
+    while count == 0:
+        canvas.wait_for_click()
+        x = canvas.get_mouse_x()
+        y = canvas.get_mouse_y()
+        objs = canvas.find_overlapping(x, y, x + 1, y + 1)
+        if ("shape_100" in objs): 
+            count += 1
+            canvas.clear()
+            fill_squares(canvas)
+            return "normal"
+        if ("shape_102" in objs): 
+            count += 1
+            canvas.clear()
+            fill_squares(canvas)
+            return "hard"
+    
+def play_normal_game(canvas, white_pieces, white_squares, black_pieces, black_squares, hole):
+    turn = 0
+    while True:
+        if turn % 2 == 0:
+            player = "white"
+            playing_squares = white_squares
+            playing_pieces = white_pieces
+            defending_squares = black_squares
+            defending_pieces = black_pieces
+            defender = "black"
+        else:
+            player = "black"
+            playing_squares = black_squares
+            playing_pieces = black_pieces
+            defending_squares = white_squares
+            defending_pieces = white_pieces
+            defender = "white"
+
+        
+        
+        if "king" in playing_pieces:
+            danger(player, defending_pieces, defending_squares, playing_pieces, playing_squares)
+
+            first_grid = click(canvas)
+        
+            if first_grid in playing_squares: 
+
+                spot = playing_squares.index(first_grid)
+                piece = playing_pieces[spot]
+                highlight(canvas, player, piece, first_grid, defending_squares, playing_squares)
+
+                second_grid = click(canvas)
+
+                if second_grid == first_grid:
+                    clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                    continue
+
+                if second_grid != first_grid:
+                    while second_grid in playing_squares:
+                        first_grid = second_grid
+                        spot = playing_squares.index(first_grid)
+                        piece = playing_pieces[spot]
+                        clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                        highlight(canvas, player, piece, first_grid, defending_squares, playing_squares)
+                        second_grid = click(canvas)
+                    if (check_valid(piece, player, playing_pieces, playing_squares, defending_pieces, defending_squares, first_grid, second_grid) == 'true'):
+                        playing_squares[spot] = second_grid
+                        clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                        turn += 1
+                    else:
+                        while (check_valid(piece, player, playing_pieces, playing_squares, defending_pieces, defending_squares, first_grid, second_grid) == "false"):
+                            second_grid = click(canvas)
+                        playing_squares[spot] = second_grid
+                        clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                        turn += 1
+        else: 
+            print("Game over, " + defender + " won!")
+            break
+
+def play_hard_game(canvas, white_pieces, white_squares, black_pieces, black_squares, hole):
+    turn = 0
+    while True:
+        if turn % 2 == 0:
+            player = "white"
+            playing_squares = white_squares
+            playing_pieces = white_pieces
+            defending_squares = black_squares
+            defending_pieces = black_pieces
+            defender = "black"
+        else:
+            player = "black"
+            playing_squares = black_squares
+            playing_pieces = black_pieces
+            defending_squares = white_squares
+            defending_pieces = white_pieces
+            defender = "white"
+        
+        if "king" in playing_pieces:
+            danger(player, defending_pieces, defending_squares, playing_pieces, playing_squares)
+
+            first_grid = click(canvas)
+        
+            if first_grid in playing_squares: 
+
+                spot = playing_squares.index(first_grid)
+                piece = playing_pieces[spot]
+                highlight(canvas, player, piece, first_grid, defending_squares, playing_squares)
+
+                second_grid = click(canvas)
+
+                if second_grid == first_grid:
+                    clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                    continue
+
+                if second_grid != first_grid:
+                    while second_grid in playing_squares:
+                        first_grid = second_grid
+                        spot = playing_squares.index(first_grid)
+                        piece = playing_pieces[spot]
+                        clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                        highlight(canvas, player, piece, first_grid, defending_squares, playing_squares)
+                        second_grid = click(canvas)
+                    if (check_valid(piece, player, playing_pieces, playing_squares, defending_pieces, defending_squares, first_grid, second_grid) == 'true'):
+                        playing_squares[spot] = second_grid
+                        random_action(canvas, second_grid, first_grid, playing_pieces, playing_squares, hole)
+                        clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                        turn += 1
+                    else:
+                        while (check_valid(piece, player, playing_pieces, playing_squares, defending_pieces, defending_squares, first_grid, second_grid) == "false"):
+                            second_grid = click(canvas)
+                        playing_squares[spot] = second_grid
+                        random_action(canvas, second_grid, first_grid, playing_pieces, playing_squares, hole)
+                        clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+                        turn += 1
+                          
+        else: 
+            print("Game over, " + defender + " won!")
+            break
+
+def random_action(canvas, second_grid, first_grid, playing_pieces, playing_squares, hole):
+    if second_grid in hole:
+        spot = playing_squares.index(second_grid)
+        playing_pieces.pop(spot)
+        playing_squares.pop(spot)
+        print("Your piece fell into a hole!")
+    else:
+        chance = random.randint(1, 100)
+        if len(hole) < 10:
+            if chance <= 10:
+                spot = playing_squares.index(second_grid)
+                playing_pieces.pop(spot)
+                playing_squares.pop(spot)
+                hole.append(second_grid)
+                print("Your piece fell into a hole!")
+
+def danger(player, defending_pieces, defending_squares, playing_pieces, playing_squares):
+    all_targs = []
+    defender = "black"
+    if player == "black": defender = "white"
+    for i in defending_squares:
+        spot = defending_squares.index(i)
+        piece = defending_pieces[spot]
+        if piece == "pawn":
+            targs = pawn_targets(defender, i)
+        else:
+            targs = targets(defender, piece, i, playing_squares, defending_squares)
+        for x in targs:
+            if ((x[0] < 1 or x[0] > 8) or (x[1] < 1 or x[1] > 8)):
+                continue
+            if x in all_targs:
+                continue
+            else: all_targs.append(x)
+    king = playing_squares[playing_pieces.index("king")]
+    if king in all_targs:
+        print("Danger!")
+        left_x = ((king[0] - 1) * 80) + 1
+        top_y = ((8 - king[1]) * 80) + 1
+        square = canvas.find_overlapping(left_x, top_y, left_x + 1, top_y + 1)
+        canvas.set_color(square[0], "red")
+        return("true")
+    else:
+        return("false")
+
+def clear(canvas, white_pieces, white_squares, black_pieces, black_squares, hole):
+    canvas.clear()
+    fill_squares(canvas)
+    create_position(canvas, white_pieces, white_squares, black_pieces, black_squares, hole)
+
+def click(canvas):
+    canvas.wait_for_click()
+    x = int (1 + (canvas.get_mouse_x()/80))
+    y = int (9 - (canvas.get_mouse_y()/80))
+    grid = [x, y]
+    return grid
+
+def highlight(canvas, player, piece, first_grid, defending_squares, playing_squares):
+    moves = targets(player, piece, first_grid, defending_squares, playing_squares)
+    x = 1
+    if player == "black": x = -1
+    for i in range (len(moves)):
+        left_x = (((moves[i][0] - 1) * 80) + 32)
+        top_y = (((8 - moves[i][1]) * 80) + 32) 
+        right_x = (((moves[i][0] - 1) * 80) + 48)
+        bottom_y = (((8 - moves[i][1]) * 80) + 48)
+        if (moves[i] in defending_squares):
+            left_x += 3
+            top_y += 3
+            right_x -= 3
+            bottom_y -= 3
+            canvas.create_oval(left_x, top_y, right_x, bottom_y, "red")
+        else: 
+            canvas.create_oval(left_x, top_y, right_x, bottom_y, "grey")
+
+def pawn_targets(player, first_grid):
+    x = 1
+    if player == "black": x = -1
+    diags = [[first_grid[0] + 1, first_grid[1] + x], [first_grid[0] - 1, first_grid[1] + x]]
+    return diags
+
+def give_options(canvas, color):
+    pieces = ["_knight.png", "_bishop.png", "_rook.png", "_queen.png"]
+    for i in range (len(pieces)):
+        new = color + pieces[i]
+        pieces[i] = new
+    canvas.create_rectangle(100, 265, 540, 375, "white", "black")
+    for i in range (len(pieces)):
+        left_x = 115 + (110 * i)
+        top_y = 280
+        right_x = left_x + 80
+        bottom_y = 360
+        canvas.create_rectangle(left_x, top_y, right_x, bottom_y, "white", "black")
+        canvas.create_image(left_x + 10, top_y + 10, pieces[i])
+    canvas.wait_for_click()
+    x = (canvas.get_mouse_x() - 115)
+    y = (canvas.get_mouse_y() - 280)
+    if (y > 0 and y < 80):
+        if (x >= 0 and x <= 80):
+            return ("knight")
+        if (x >= 110 and x <= 190):
+            return ("bishop")
+        if (x >= 220 and x <= 300):
+            return ("rook")
+        if (x >= 330 and x <= 410):
+            return ("queen")
+
+def targets(player, piece, first_grid, defending_squares, playing_squares):
+    h = first_grid[0]
+    v = first_grid[1]
+
+    if piece == "king": 
+        k = [[h - 1, v], [h + 1, v], [h, v + 1], [h, v - 1], [h + 1, v + 1], [h - 1, v - 1], 
+        [h + 1, v - 1], [h - 1, v + 1]]
+        removals = []
+        for i in range (len(k)):
+            temp = k[i]
+            if temp in playing_squares:
+                removals.append(temp)
+        for i in range (len(removals)):
+            x = removals[i]
+            k.remove(x)
+        return k 
+    
+    if piece == "pawn":
+        m = 1
+        if player == "black": m *= -1
+        diags = [[h + 1, v + m], [h - 1, v + m]]
+        p = []
+        for i in range (len(diags)):
+            for x in range (len(defending_squares)):
+                if defending_squares[x] == diags[i]:
+                    p.append(diags[i])
+                    break
+        if ([h, v + m] not in playing_squares) and ([h, v + m] not in defending_squares):
+            p.append([h, v + m])
+        if v == 7 or v == 2: 
+            m *= 2
+            if ([h, v + m] not in playing_squares) and ([h, v + m] not in defending_squares):
+                p.append([h, v + m])
+        return p
+    
+    if piece == "knight":
+        n = [[h + 2, v + 1], [h + 2, v - 1], [h - 2, v + 1], [h - 2, v - 1], 
+        [h + 1, v + 2], [h + 1, v - 2], [h - 1, v + 2], [h - 1, v - 2]]
+        for i in n:
+            if i in playing_squares:
+                n.remove(i)
+        return n
+
+    if piece == "bishop":
+        diag = []
+        r = 8 - h; l = h - 1; t = 8 - v; b = v - 1
+        ways = [check_diagonal("tr", r, t, first_grid, diag), check_diagonal("tl", l, t, first_grid, diag), 
+        check_diagonal("br", r, b, first_grid, diag), check_diagonal("bl", l, b, first_grid, diag)]
+        final = remove_obstructions(ways, defending_squares, playing_squares)
+        return final
+
+    if piece == "rook":
+        ways = fill_rook(v, h)
+        final = remove_obstructions(ways, defending_squares, playing_squares)
+        return final
+
+    if piece == "queen":
+        diag = targets(player, "bishop", first_grid, defending_squares, playing_squares)
+        sides = targets(player, "rook", first_grid, defending_squares, playing_squares)
+        final = []
+        for i in range (len(diag)):
+            final.append(diag[i])
+        for i in range (len(sides)):
+            final.append(sides[i])
+        return final
+
+def remove_obstructions(ways, defending_squares, playing_squares):
+    for i in range (len(ways)):
+        for x in range (len(ways[i])):
+            count = 0
+            for y in range (len(defending_squares)):
+                if defending_squares[y] == ways[i][x]:
+                    ways[i] = ways[i][0:x + 1]
+                    count += 1
+                    break
+            for w in range (len(playing_squares)):
+                if playing_squares[w] == ways [i][x]:
+                    ways[i] = ways[i][0:(x)]
+                    count += 1
+                    break
+            if count > 0:
+                break
+    final = []
+    for i in range (len(ways)):
+        for x in range (len(ways[i])):
+            final.append(ways[i][x])
+    return final
+
+def fill_rook(v, h):
+    one = []; two = []; three = []; four = []
+    top = v
+    while top < 8:
+        one.append([h, top + 1])
+        top += 1
+    bottom = v
+    while bottom > 1:
+        two.append([h, bottom - 1])
+        bottom -= 1
+    left = h
+    while left > 1:
+        three.append([left - 1, v])
+        left -= 1
+    right = h
+    while right < 8:
+        four.append([right + 1, v])
+        right += 1
+    ways = [one, two, three, four]
+    return ways
+
+def check_valid(piece, player, playing_pieces, playing_squares, defending_pieces, defending_squares, first_grid, second_grid):
+    spots = targets(player, piece, first_grid, defending_squares, playing_squares)
+    if second_grid not in playing_squares:
+        if second_grid in spots:
+            if second_grid in defending_squares:
+                spot = defending_squares.index(second_grid)
+                defending_pieces.pop(spot)
+                defending_squares.pop(spot)
+            if piece == "pawn":
+                if (player == "black" and second_grid[1] == 1) or (player == "white" and second_grid[1] == 8):
+                    new_piece = give_options(canvas, player)
+                    initial = playing_squares.index(first_grid)
+                    playing_pieces[initial] = new_piece
+            return "true"
+        else: return "false"
+    else: return "false"
+
+def check_diagonal(direction, horizontal, vertical, initial, initial_list):
+    result = []
+    loops = horizontal
+    if horizontal > vertical: loops = vertical
+    if direction == "tr": h = 1; v = 1
+    elif direction == "tl": h = -1; v = 1
+    elif direction == "br": h = 1; v = -1
+    elif direction == "bl": h = -1; v = -1
+    for i in range (1, loops + 1):
+        result.append([initial[0] + (h * i), initial[1] + (v * i)])
+    for i in range (len(result)):
+        initial_list.append(result[i])
+    return result
+
+def fill_squares(canvas):
+    count = 0
+    for x in range (8):
+        for i in range (4):
+            if (count % 2 == 0):
+                white_square(canvas, 2 * i, x)
+                green_square(canvas, (2 * i) + 1, x)
+            else:
+                green_square(canvas, 2 * i, x)
+                white_square(canvas, (2 * i) + 1, x)
+        count += 1
+
+def create_position(canvas, white_pieces, w_location, black_pieces, b_location, hole):
+    set_pieces(canvas, white_pieces, w_location, "white")
+    set_pieces(canvas, black_pieces, b_location, "black")
+    for i in range (len(hole)):
+        left = (hole[i][0] * 80) - 80
+        top = ((8 - hole[i][1]) * 80)
+        canvas.create_image_with_size(left, top, 80, 80, "hole.png")
+
+def set_pieces(canvas, piece_list, location, color):
+    count = 0
+    for key in piece_list:
+        temp = location[count]
+        hor = ((temp[0] - 1) * square_size) + 10
+        vert = CANVAS_HEIGHT - (temp[1] * square_size) + 10
+        image = color + "_" + key + ".png"
+        canvas.create_image(hor, vert, image)
+        count += 1
+
+def green_square(canvas, i, x):
+    left_x = square_size * i
+    top_y = square_size * x
+    right_x = square_size + left_x
+    bottom_y = square_size + top_y
+    canvas.create_rectangle(
+        left_x, top_y, 
+        right_x, bottom_y, 
+        "green", "black")
+
+def white_square(canvas, i, x):
+    left_x = square_size * i
+    top_y = square_size * x
+    right_x = square_size + left_x
+    bottom_y = square_size + top_y
+    canvas.create_rectangle(
+        left_x, top_y, 
+        right_x, bottom_y, 
+        "white", "black")
+
+if __name__ == '__main__':
+    main()
